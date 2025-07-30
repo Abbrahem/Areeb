@@ -4,7 +4,6 @@ import { toast } from 'react-toastify';
 
 // Set base URL for API - يمكن تغييره من متغيرات البيئة
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://e650d764-c4e9-42b9-91b6-5f59c4d0bc8b-00-184uinw57mbzk.worf.replit.dev';
-axios.defaults.baseURL = API_BASE_URL;
 
 const AuthContext = createContext();
 
