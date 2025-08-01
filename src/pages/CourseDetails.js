@@ -23,7 +23,7 @@ import {
 } from '@mui/icons-material';
 
 const CourseDetails = () => {
-  const { courseId } = useParams();
+  const { id: courseId } = useParams();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [videos, setVideos] = useState([]);
