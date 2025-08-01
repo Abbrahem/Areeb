@@ -37,6 +37,14 @@ const CourseDetails = () => {
   const [progress, setProgress] = useState(null);
 
   const fetchCourseDetails = useCallback(async () => {
+    // Validate courseId before making the request
+    if (!courseId || courseId === 'undefined') {
+      console.error('Invalid courseId:', courseId);
+      setError('معرف الكورس غير صحيح');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await axios.get(`/api/courses/${courseId}`);
       setCourse(response.data.course);
@@ -87,9 +95,15 @@ const CourseDetails = () => {
   }, [courseId]);
 
   useEffect(() => {
-    fetchCourseDetails();
-    checkEnrollment();
-  }, [fetchCourseDetails, checkEnrollment]);
+    // Only fetch if courseId is valid
+    if (courseId && courseId !== 'undefined') {
+      fetchCourseDetails();
+      checkEnrollment();
+    } else {
+      setError('معرف الكورس غير صحيح');
+      setLoading(false);
+    }
+  }, [fetchCourseDetails, checkEnrollment, courseId]);
 
   const handleEnroll = async () => {
     const token = localStorage.getItem('token');

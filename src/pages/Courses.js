@@ -117,7 +117,22 @@ const Courses = () => {
   const fetchCourses = async () => {
     try {
       const response = await axios.get('/api/courses/approved');
-      setCourses(response.data.courses || []);
+      console.log('API Response:', response.data);
+      
+      const coursesData = response.data.courses || [];
+      console.log('Courses data:', coursesData);
+      
+      // Validate each course has an _id
+      const validCourses = coursesData.filter(course => {
+        if (!course._id) {
+          console.error('Course without _id:', course);
+          return false;
+        }
+        return true;
+      });
+      
+      console.log('Valid courses:', validCourses);
+      setCourses(validCourses);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -139,6 +154,20 @@ const Courses = () => {
   });
 
   const handleCourseClick = (courseId) => {
+    // Validate that courseId exists and is not undefined
+    if (!courseId) {
+      console.error('Course ID is undefined or null');
+      setError('خطأ: معرف الكورس غير صحيح');
+      return;
+    }
+    
+    // Additional validation to ensure it's a valid MongoDB ObjectId format
+    if (typeof courseId !== 'string' || courseId.length !== 24) {
+      console.error('Invalid course ID format:', courseId);
+      setError('خطأ: معرف الكورس غير صحيح');
+      return;
+    }
+    
     navigate(`/courses/${courseId}`);
   };
 
@@ -391,8 +420,15 @@ const Courses = () => {
         {/* Results Count */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" color="text.secondary">
-            تم العثور على {filteredCourses.length} كورس
+            تم العثور على {filteredCourses.filter(course => course._id).length} كورس
           </Typography>
+          {filteredCourses.some(course => !course._id) && (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              <Typography variant="body2">
+                بعض الكورسات غير متاحة حالياً
+              </Typography>
+            </Alert>
+          )}
         </Box>
 
         {/* Courses Grid */}
@@ -408,7 +444,7 @@ const Courses = () => {
           </Paper>
         ) : (
           <Grid container spacing={3}>
-            {filteredCourses.map((course, index) => (
+            {filteredCourses.filter(course => course._id).map((course, index) => (
               <Grid xs={12} sm={6} md={4} lg={3} key={course._id}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -421,16 +457,21 @@ const Courses = () => {
                       height: '400px', 
                       display: 'flex', 
                       flexDirection: 'column',
-                      cursor: 'pointer',
+                      cursor: course._id ? 'pointer' : 'not-allowed',
                       transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                       borderRadius: 3,
                       overflow: 'hidden',
+                      opacity: course._id ? 1 : 0.7,
                       '&:hover': {
-                        transform: 'translateY(-12px) scale(1.05)',
-                        boxShadow: '0 25px 50px rgba(0,0,0,0.4)'
+                        transform: course._id ? 'translateY(-12px) scale(1.05)' : 'none',
+                        boxShadow: course._id ? '0 25px 50px rgba(0,0,0,0.4)' : '0 8px 16px rgba(0,0,0,0.2)'
                       }
                     }}
-                    onClick={() => handleCourseClick(course._id)}
+                    onClick={() => {
+                      if (course._id) {
+                        handleCourseClick(course._id);
+                      }
+                    }}
                   >
                     {/* Top Section with Colored Background */}
                     <Box 
@@ -548,25 +589,36 @@ const Courses = () => {
                         variant="contained"
                         size="large"
                         fullWidth
+                        disabled={!course._id}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCourseClick(course._id);
+                          if (course._id) {
+                            handleCourseClick(course._id);
+                          }
                         }}
                         sx={{ 
                           fontSize: '1rem', 
                           py: 1.5,
-                          background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                          background: course._id 
+                            ? 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)'
+                            : 'linear-gradient(45deg, #ccc 0%, #999 100%)',
                           fontWeight: 'bold',
                           textTransform: 'none',
                           borderRadius: 2,
                           '&:hover': {
-                            background: 'linear-gradient(45deg, #764ba2 0%, #667eea 100%)',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
+                            background: course._id 
+                              ? 'linear-gradient(45deg, #764ba2 0%, #667eea 100%)'
+                              : 'linear-gradient(45deg, #ccc 0%, #999 100%)',
+                            transform: course._id ? 'translateY(-2px)' : 'none',
+                            boxShadow: course._id ? '0 8px 25px rgba(102, 126, 234, 0.4)' : 'none'
+                          },
+                          '&:disabled': {
+                            cursor: 'not-allowed',
+                            opacity: 0.6
                           }
                         }}
                       >
-                        عرض التفاصيل
+                        {course._id ? 'عرض التفاصيل' : 'غير متاح'}
                       </Button>
                     </CardContent>
                   </Card>
